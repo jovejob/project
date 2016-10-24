@@ -1,91 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
     <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
+        <meta name="_token" content="{{ csrf_token() }}"/>
         <title>Laravel</title>
+        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+        <!--jQuery-->
+        <script type="text/javascript" src="{{ asset('js/jquery-3.1.1.js') }}"></script>
 
-        <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css?family=Raleway:100,600" rel="stylesheet" type="text/css">
-
-        <!-- Styles -->
-        <style>
+        {{--<style>
             html, body {
-                background-color: #fff;
-                color: #636b6f;
-                font-family: 'Raleway', sans-serif;
-                font-weight: 100;
-                height: 100vh;
+                height: 100%;
+            }
+            body {
                 margin: 0;
+                padding: 0;
+                width: 100%;
+                display: table;
+                font-weight: 100;
+                font-family: 'Lato';
             }
-
-            .full-height {
-                height: 100vh;
+            .container {
+                text-align: center;
+                display: table-cell;
+                vertical-align: middle;
             }
-
-            .flex-center {
-                align-items: center;
-                display: flex;
-                justify-content: center;
-            }
-
-            .position-ref {
-                position: relative;
-            }
-
-            .top-right {
-                position: absolute;
-                right: 10px;
-                top: 18px;
-            }
-
             .content {
                 text-align: center;
+                display: inline-block;
             }
-
             .title {
-                font-size: 84px;
+                font-size: 96px;
             }
-
-            .links > a {
-                color: #636b6f;
-                padding: 0 25px;
-                font-size: 12px;
-                font-weight: 600;
-                letter-spacing: .1rem;
-                text-decoration: none;
-                text-transform: uppercase;
-            }
-
-            .m-b-md {
-                margin-bottom: 30px;
-            }
-        </style>
+        </style>--}}
     </head>
     <body>
-        <div class="flex-center position-ref full-height">
-            @if (Route::has('login'))
-                <div class="top-right links">
-                    <a href="{{ url('/login') }}">Login</a>
-                    <a href="{{ url('/register') }}">Register</a>
-                </div>
-            @endif
-
-            <div class="content">
-                <div class="title m-b-md">
-                    Laravel
-                </div>
-
-                <div class="links">
-                    <a href="https://laravel.com/docs">Documentation</a>
-                    <a href="https://laracasts.com">Laracasts</a>
-                    <a href="https://laravel-news.com">News</a>
-                    <a href="https://forge.laravel.com">Forge</a>
-                    <a href="https://github.com/laravel/laravel">GitHub</a>
-                </div>
-            </div>
+    <div>
+        <!-- Generate a form for adding article -->
+        {!! Form::open([
+            'route' => 'add.product',
+         ]) !!}
+        <div class="form-group">
+            <label for="name">Product Name</label>
+            <input id="name" type="text" name="title">
         </div>
+        <div class="form-group">
+            <label for="quantity">Quantity in stock</label>
+            <input id="quantity" type="text" name="quantity">
+        </div>
+        <div class="form-group">
+            <label for="price">Price per item</label>
+            <input id="price" type="text" name="price">
+        </div>
+        <div class="error-form">
+            
+        </div>
+        <div class="form-group">
+            <input id="submit" type="submit" value="Send">
+        </div>
+        {!! Form::close() !!}
+    </div>
+    <div class="result">
+        <table id="table" width="100%">
+            <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Quantity in stock</th>
+                <th>Price per item</th>
+                <th>Date</th>
+                <th>Total value number</th>
+            </tr>
+            </thead>
+            <tbody id="table-body">
+
+            @if(isset($products))
+                @foreach($products as $key=> $value)
+                    <?php
+                    $value = json_decode($value);
+                    $total = $value->price * $value->quantity;
+                    ?>
+                    <tr>
+                        <td>{{ $value->name }}</td>
+                        <td>{{ $value->quantity }}</td>
+                        <td>{{ $value->price }}</td>
+                        <td>{{ $value->datetime }}</td>
+                        <td>{{ $total }}</td>
+                    </tr>
+                @endforeach
+            @endif
+            </tbody>
+        </table>
+    </div>
     </body>
+<script>
+    // contact form
+    $(document).on("click","#submit",function(e) {
+        e.preventDefault();
+        var name = $(this).parent().parent().find('#name').val();
+        var quantity = $(this).parent().parent().find('#quantity').val();
+        var price = $(this).parent().parent().find('#price').val();
+        $.post("add-product", {
+            '_token': $('meta[name=_token]').attr('content'),
+            name: name,
+            quantity: quantity,
+            price: price
+        }).done(function(product) {
+            var total = parseInt(product.product.price) * parseInt(product.product.quantity);
+            $('#table-body').append(
+                    '<tr>'+
+                            '<td>'+product.product.name+'</td>'+
+                            '<td>'+product.product.quantity+'</td>'+
+                            '<td>'+product.product.price+'</td>'+
+                            '<td>'+product.product.datetime+'</td>'+
+                            '<td>'+total+'</td>'+
+                    '</tr>'
+            );
+            $("#name").val('');
+            $("#quantity").val('');
+            $("#price").val('');
+            $('.error-form').html('');
+          })
+          .fail(function($get) {
+
+            $('.error-form').html('')
+             $.each($get.responseJSON,function(index,value){
+                $('.error-form').append(value+'<br />');
+             });
+          });
+    });
+</script>
 </html>
